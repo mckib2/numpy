@@ -7,7 +7,11 @@ import sys
 import pytest
 
 @pytest.mark.slow
-def test_multi_fortran_link(tmp_path):
+def test_multi_fortran_libs_link(tmp_path):
+    '''
+    Ensures multiple "fake" static libraries are correctly linked.
+    see gh-18295
+    '''
     # make some dummy sources
     with open(tmp_path / '_dummy1.f', 'w') as fid:
         fid.write('\n'.join([
@@ -20,6 +24,7 @@ def test_multi_fortran_link(tmp_path):
             '      RETURN',
             '      END FUNCTION']))
     with open(tmp_path / '_dummy.c', 'w') as fid:
+        # doesn't need to load - just needs to exist
         fid.write('int PyInit_dummyext;')
 
     # make a setup file
