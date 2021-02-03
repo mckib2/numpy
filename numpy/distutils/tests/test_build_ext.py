@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import sys
+from textwrap import indent, dedent
 import pytest
 
 @pytest.mark.slow
@@ -14,15 +15,15 @@ def test_multi_fortran_libs_link(tmp_path):
     '''
     # make some dummy sources
     with open(tmp_path / '_dummy1.f', 'w') as fid:
-        fid.write('\n'.join([
-            '      FUNCTION dummy_one()',
-            '      RETURN',
-            '      END FUNCTION']))
+        fid.write(indent(dedent('''\
+            FUNCTION dummy_one()
+            RETURN
+            END FUNCTION'''), prefix=' '*6))
     with open(tmp_path / '_dummy2.f', 'w') as fid:
-        fid.write('\n'.join([
-            '      FUNCTION dummy_two()',
-            '      RETURN',
-            '      END FUNCTION']))
+        fid.write(indent(dedent('''\
+            FUNCTION dummy_two()
+            RETURN
+            END FUNCTION'''), prefix=' '*6))
     with open(tmp_path / '_dummy.c', 'w') as fid:
         # doesn't need to load - just needs to exist
         fid.write('int PyInit_dummyext;')
@@ -30,20 +31,21 @@ def test_multi_fortran_libs_link(tmp_path):
     # make a setup file
     with open(tmp_path / 'setup.py', 'w') as fid:
         srctree = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-        fid.write('\n'.join([
-            'def configuration(parent_package="", top_path=None):',
-            '    from numpy.distutils.misc_util import Configuration',
-            '    config = Configuration("", parent_package, top_path)',
-            '    config.add_library("dummy1", sources=["_dummy1.f"])',
-            '    config.add_library("dummy2", sources=["_dummy2.f"])',
-            '    config.add_extension("dummyext", sources=["_dummy.c"], libraries=["dummy1", "dummy2"])',
-            '    return config',
-            '',
-            'if __name__ == "__main__":',
-            '    import sys',
-            f'    sys.path.insert(0, r"{srctree}")',
-            '    from numpy.distutils.core import setup',
-            '    setup(**configuration(top_path="").todict())']))
+        fid.write(dedent(f'''\
+            def configuration(parent_package="", top_path=None):
+                from numpy.distutils.misc_util import Configuration
+                config = Configuration("", parent_package, top_path)
+                config.add_library("dummy1", sources=["_dummy1.f"])
+                config.add_library("dummy2", sources=["_dummy2.f"])
+                config.add_extension("dummyext", sources=["_dummy.c"], libraries=["dummy1", "dummy2"])
+                return config
+
+
+            if __name__ == "__main__":
+                import sys
+                sys.path.insert(0, r"{srctree}")
+                from numpy.distutils.core import setup
+                setup(**configuration(top_path="").todict())'''))
 
     # build the test extensino and "install" into a temporary directory
     build_dir = tmp_path
